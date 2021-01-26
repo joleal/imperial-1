@@ -33,6 +33,23 @@ class APIClient {
           }
         }
       });
+      ws.subscriptions.create("JoinGameChannel", {
+        connected: () => {
+          this.messageQueue.forEach(data =>
+            this.send(data, "JoinGameChannel")
+          );
+          this.messageQueue = [];
+        },
+        received: envelope => {
+          if (this.handlers[envelope.kind]) {
+            this.handlers[envelope.kind](envelope.data);
+          } else {
+            console.error(envelope);
+            throw new Error(`unhandled kind: ${envelope.kind}`);
+          }
+        }
+      });
+
     });
     return ws;
   }
@@ -88,9 +105,9 @@ class APIClient {
     return this.send(
       {
         kind: "joinGame",
-        data: { userName, userId, gameId }
+        join: { userName, userId, gameId }
       },
-      "AppearanceChannel"
+      "JoinGameChannel"
     );
   }
 
