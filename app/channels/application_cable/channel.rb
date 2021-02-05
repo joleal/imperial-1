@@ -8,12 +8,9 @@ module ApplicationCable
       ActionCable.server.broadcast(channel, payload)
     end
 
-    def broadcast_games(channel, kind)
+    def broadcast_games(channel)
       payload = {
-        kind: kind,
-        data: {
-          games: Game.includes(:host, :users, :actions).order(created_at: :desc).all.map(&:to_json)
-        }
+        games: Game.includes(:host, :users, :actions).order(created_at: :desc).all.map(&:to_json)
       }
       ActionCable.server.broadcast(channel, payload)
     end

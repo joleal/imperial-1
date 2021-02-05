@@ -21,7 +21,7 @@
         </div>
       </div>
       <div
-        v-on:click="openGame()"
+        @click="openGame"
         class="rounded p-2 mt-2 bg-green-800 text-white cursor-pointer inline-block"
       >
         Open New Game
@@ -55,7 +55,7 @@
           </router-link>
           <div
             v-if="joinable(game.id)"
-            v-on:click="joinGame(game.id)"
+            @click="joinGame(game.id)"
             class="rounded p-2 inline-block bg-green-600 text-white cursor-pointer"
           >
             Join Game
@@ -77,7 +77,9 @@
 <script>
 import Action from "../../lib/action.js";
 import { Nation } from "../../lib/constants.js";
-import { apiClient } from "../router/index.js";
+//import { apiClient } from "../router/index.js";
+import getGameLog from "../getGameLog.js";
+import Imperial from "../../lib/imperial.js";
 
 import Star from "../components/Star.vue";
 
@@ -86,16 +88,38 @@ export default {
   components: {
     Star
   },
-  props: ["profile", "users", "games"],
-  beforeDestroy() {
-    apiClient.clearHandlers();
+  props: ["profile", "users", "webSocket"],
+  data: function () {
+    return {
+      channel: {},
+      games: []
+    }
   },
-  mounted() {
-    apiClient.onUpdateGameLog(() => {});
+  beforeDestroy() {
+    //apiClient.clearHandlers();
+  },
+  created() {
+    //apiClient.onUpdateGameLog(() => {});
+    this.channel = this.webSocket.subscriptions.create({ channel: "HomeChannel" }, {
+      received: ({ games }) => {
+        this.games = games.map(game => {
+          const gameLog = getGameLog(game.log);
+          const imperialGame = Imperial.fromLog(gameLog);
+          return {
+            host: game.host,
+            log: game.log,
+            players: game.players,
+            name: game.name,
+            id: game.id,
+            currentPlayer: imperialGame.currentPlayerName
+          };
+        });
+      }
+    })
   },
   methods: {
     openGame: function() {
-      apiClient.openGame(this.profile.username);
+      this.channel.send({ host: this.profile.username });
     },
     gameStarted: function(gameId) {
       const log = this.games.find(game => game.id === gameId).log;
@@ -115,7 +139,11 @@ export default {
       return game.host === this.profile.username;
     },
     joinGame: function(gameId) {
-      apiClient.joinGame(this.$cookies.get("user_id"), gameId, this.profile.username);
+      this.channel.send({
+        user_id: this.$cookies.get("user_id"),
+        game_id: gameId,
+        name: this.profile.username
+      });
     },
     startGame: function(gameId) {
       const game = this.games.find(game => game.id === gameId);
@@ -124,7 +152,7 @@ export default {
       const players = this.assignNations(shuffledPlayers);
       const soloMode = game.soloMode;
       const action = Action.initialize({ players, soloMode });
-      apiClient.tick(game.id, action);
+      //apiClient.tick(game.id, action);
     },
     playerNames: function(game) {
       if (game.players.length === 1) {
