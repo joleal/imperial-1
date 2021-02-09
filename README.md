@@ -48,6 +48,17 @@ The JavaScript in this project is relatively well-tested but the Ruby and VueJS 
 npm test
 ```
 
+## PGCrypto Error
+
+> could not load library "/usr/local/lib/postgresql/pgcrypto.so"
+
+### For MacOS
+Requires `brew`
+
+```bash
+brew install postgis
+```
+
 ## What the heck is a _Schnelleinsteig_??
 
 You may notice a couple files, `schnelleinsteigLog.js` and `schnelleinsteig.test.js`. The first of these is a log taken from an imaginary 5-round game that was described in a pamphlet that came with my copy of the game. The second of these is a series of tests that helped motivate early development of the core game logic. They are currently in the process of being phased out in favor of the tests in `imperial.test.js`.
